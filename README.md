@@ -11,13 +11,7 @@ Aplicación web para aprender bases de datos en 1º de Bachillerato: diseño de 
 - **Base de datos SQL**: motor SQLite (sql.js), cuatro bases de datos de ejemplo (Instituto, Biblioteca, Tienda y Empresa), carga de scripts `.sql` (con adaptación automática de volcados de MySQL y phpMyAdmin) y de archivos `.db`, errores explicados en español, historial y exportación a `.sql`, `.db` y CSV.
 - **Chuleta SQL** con ejemplos que se ejecutan con un clic, y **Ayuda** con las reglas de transformación.
 
-## Publicar en GitHub Pages
 
-1. Crea un repositorio público en GitHub (por ejemplo, `dataula`).
-2. Sube el contenido de esta carpeta respetando la estructura: `index.html`, `css/`, `js/` y `.nojekyll`. Desde la web: *Add file → Upload files* y arrastra las carpetas.
-3. Ve a **Settings → Pages**.
-4. En **Source** elige *Deploy from a branch*, rama `main`, carpeta `/ (root)`, y pulsa *Save*.
-5. En un par de minutos estará disponible en `https://TU-USUARIO.github.io/dataula/`.
 
 ## Estructura
 

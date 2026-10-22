@@ -17,12 +17,19 @@
     if (t) return t;
     return window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
-  applyTheme(U.storage.get('sgbd.theme', ''));
+  applyTheme(U.prefs.get('sgbd.theme', ''));
   $('#themeToggle').addEventListener('click', () => {
     const next = currentTheme() === 'dark' ? 'light' : 'dark';
-    U.storage.set('sgbd.theme', next);
+    U.prefs.set('sgbd.theme', next);
     applyTheme(next);
     toast(next === 'dark' ? 'Modo pizarra activado' : 'Modo cuaderno activado');
+  });
+
+  /* Empezar de cero: borra todo el trabajo de esta pestaña */
+  $('#resetAll').addEventListener('click', () => {
+    if (!confirm('Se borrarán el diagrama, la base de datos, lo escrito en el editor SQL y el historial.\n\nSi quieres conservar algo, descárgalo antes desde los menús Archivo y Exportar.\n\n¿Empezar de cero?')) return;
+    U.storage.clearAll();
+    location.reload();
   });
   if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (ER.render) ER.render(); });
 

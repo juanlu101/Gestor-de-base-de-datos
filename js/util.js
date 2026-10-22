@@ -58,20 +58,50 @@
     });
   };
 
+  /* El trabajo (diagrama, base de datos, editor SQL, historial) se guarda solo en esta pestaña
+     (sessionStorage): sobrevive a una recarga, pero se borra al cerrar la pestaña o el navegador.
+     Así, cuando llega un grupo nuevo a clase, la aplicación empieza vacía. */
+  const PREFIX = 'sgbd.';
   U.storage = {
+    disabled: false,
     get(key, fallback) {
       try {
-        const v = localStorage.getItem(key);
+        const v = sessionStorage.getItem(key);
         return v == null ? fallback : v;
       } catch (e) { return fallback; }
     },
     set(key, value) {
-      try { localStorage.setItem(key, value); return true; } catch (e) { return false; }
+      if (U.storage.disabled) return false;
+      try { sessionStorage.setItem(key, value); return true; } catch (e) { return false; }
     },
     remove(key) {
-      try { localStorage.removeItem(key); } catch (e) { /* nada */ }
+      try { sessionStorage.removeItem(key); } catch (e) { /* nada */ }
+    },
+    clearAll() {
+      U.storage.disabled = true;
+      try {
+        Object.keys(sessionStorage).filter((k) => k.startsWith(PREFIX)).forEach((k) => sessionStorage.removeItem(k));
+      } catch (e) { /* nada */ }
     }
   };
+
+  /* Preferencias que no son trabajo del alumno (solo el tema claro u oscuro): estas sí se recuerdan. */
+  U.prefs = {
+    get(key, fallback) {
+      try { const v = localStorage.getItem(key); return v == null ? fallback : v; } catch (e) { return fallback; }
+    },
+    set(key, value) {
+      try { localStorage.setItem(key, value); } catch (e) { /* nada */ }
+    }
+  };
+
+  /* Las versiones anteriores guardaban el trabajo de forma permanente (localStorage).
+     Se borra lo que quedara en el ordenador para que no aparezca el trabajo de otro grupo. */
+  try {
+    Object.keys(localStorage)
+      .filter((k) => (k.startsWith(PREFIX) && k !== PREFIX + 'theme') || k.startsWith('datAula.'))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch (e) { /* nada */ }
 
   U.debounce = function (fn, ms) {
     let t;

@@ -150,7 +150,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   z-index: 5;
 }
 .brand { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; flex-shrink: 0; }
-.brand-mark { width: 34px; height: 34px; }
+.brand-mark { width: 34px; height: 34px; flex-shrink: 0; }
 .bm-rect { fill: var(--hl); stroke: var(--ink); stroke-width: 2.5; }
 .bm-rhomb { fill: var(--surface); stroke: var(--ink); stroke-width: 2.5; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
@@ -192,6 +192,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin-bottom: 10px; flex-shrink: 0;
 }
 .icon-btn svg { width: 18px; height: 18px; fill: var(--ink); }
+.reset-btn { margin-bottom: 10px; flex-shrink: 0; }
+.reset-btn:hover { color: var(--err); border-color: var(--err); }
+.footer-note { color: var(--ink-soft); }
 .icon-btn:hover { background: var(--surface-2); }
 
 main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -278,6 +281,9 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
 }
 .er-node { cursor: move; }
+.er-line-hit { cursor: grab; pointer-events: stroke; }
+.er-handle { cursor: grab; }
+.er-canvas.panning .er-line-hit, .er-canvas.panning .er-handle { cursor: grabbing; }
 .er-node text { font-family: var(--font); pointer-events: none; }
 .er-hint {
   position: absolute; left: 14px; bottom: 10px; margin: 0; max-width: calc(100% - 28px);
@@ -509,6 +515,10 @@ table.data .rn { color: var(--muted); font-size: 12px; text-align: right; width:
   .brand { padding-bottom: 0; }
   .brand-credit { display: block; }
   .theme-toggle { position: absolute; right: 12px; top: 10px; }
+  .reset-btn { position: absolute; right: 56px; top: 10px; margin: 0; min-height: 36px; }
+  .brand { max-width: calc(100% - 175px); }
+  .brand-text { min-width: 0; }
+  .brand-credit { white-space: normal; line-height: 1.25; }
   .tabs { flex-basis: 100%; }
   .er-workspace { flex-direction: column; }
   .er-canvas-wrap { height: 60vh; flex: none; }

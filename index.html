@@ -34,6 +34,7 @@
       <button role="tab" class="tab" data-view="help" aria-selected="false">Ayuda</button>
     </nav>
 
+    <button class="btn reset-btn" id="resetAll" title="Borra el diagrama, la base de datos y las consultas para empezar de cero">Empezar de cero</button>
     <button class="icon-btn theme-toggle" id="themeToggle" title="Cambiar entre cuaderno (claro) y pizarra (oscuro)" aria-label="Cambiar tema">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9A7 7 0 0 1 12 3z"/></svg>
     </button>
@@ -90,7 +91,7 @@
             <p class="er-empty-title">El papel está en blanco</p>
             <p>Haz doble clic en la cuadrícula para crear una entidad, o abre un ejemplo desde la barra de arriba.</p>
           </div>
-          <p class="er-hint">Arrastra para mover, usa la rueda para acercar, haz doble clic en el papel para crear una entidad y pulsa Supr para eliminar.</p>
+          <p class="er-hint">Arrastra para mover, arrastra una línea de relación para curvarla, usa la rueda para acercar, haz doble clic en el papel para crear una entidad y pulsa Supr para eliminar.</p>
         </div>
         <aside class="props" id="erProps" aria-label="Propiedades del elemento seleccionado"></aside>
       </div>
@@ -175,6 +176,7 @@
   <footer class="footer">
     <span>SGBD: sistema gestor de bases de datos para 1º de Bachillerato.</span>
     <span>Creada por <strong>Juan Luis Torralbo Muñoz</strong>.</span>
+    <span class="footer-note">Tu trabajo se borra al cerrar la pestaña: descárgalo para conservarlo.</span>
     <span class="engine-status" id="engineStatus">Cargando motor SQL…</span>
   </footer>
 

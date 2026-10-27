@@ -132,7 +132,7 @@
       <p>SGBD es un sistema gestor de bases de datos que reúne en una sola página las dos partes del tema: diseñar el modelo entidad-relación y trabajar con una base de datos real mediante SQL. Todo funciona dentro del navegador; no hace falta instalar nada ni crear una cuenta.</p>
 
       <h2>1. El diagrama entidad-relación</h2>
-      <p>Se usa la notación de Chen. Cada elemento se crea desde la barra de herramientas o haciendo doble clic en la cuadrícula, y se edita en el panel de la derecha al seleccionarlo.</p>
+      <p>Se usa la notación de Chen. Cada elemento se crea desde la barra de herramientas y se edita en el panel de la derecha al seleccionarlo.</p>
       <div class="doc-table-wrap"><table class="ref">
         <tr><th>Elemento</th><th>Forma</th><th>Para qué sirve</th></tr>
         <tr><td>Entidad</td><td>Rectángulo</td><td>Algo sobre lo que guardamos datos: Alumno, Libro, Pedido…</td></tr>
@@ -176,12 +176,13 @@
         <li>Pulsar el nombre de una tabla en el panel izquierdo para ver sus datos, o una columna para escribir su nombre en el editor.</li>
         <li>Descargar la base de datos como script <code>.sql</code> o como archivo <code>.db</code>.</li>
       </ul>
-      <p>El diagrama y la base de datos se guardan solos en este navegador. Si cambias de ordenador o borras los datos del navegador se perderán, así que descarga tu trabajo para entregarlo o guardarlo.</p>
+      <p>El diagrama, la base de datos y lo que escribes en el editor SQL se conservan mientras la pestaña está abierta, aunque recargues la página. <strong>Al cerrar la pestaña o el navegador se borran</strong>, para que el siguiente grupo empiece de cero. Descarga tu trabajo para entregarlo o guardarlo: el diagrama desde <em>Archivo</em> (.json o imagen) y la base de datos desde <em>Exportar</em> (.sql o .db). El botón <strong>Empezar de cero</strong>, arriba a la derecha, lo borra todo en cualquier momento.</p>
 
       <h2>4. Atajos de teclado</h2>
       <div class="doc-table-wrap"><table class="ref">
         <tr><th>Tecla</th><th>Acción</th></tr>
-        <tr><td>Doble clic en la cuadrícula</td><td>Crear una entidad en ese punto</td></tr>
+        <tr><td>Arrastrar una línea de relación</td><td>Curvarla, por ejemplo para separar las dos líneas de una relación reflexiva</td></tr>
+        <tr><td>Doble clic en una línea curvada</td><td>Devolverla a su forma original</td></tr>
         <tr><td>Supr o Retroceso</td><td>Eliminar el elemento seleccionado</td></tr>
         <tr><td>Ctrl + Z / Ctrl + Y</td><td>Deshacer y rehacer en el diagrama</td></tr>
         <tr><td>Rueda del ratón</td><td>Acercar y alejar el diagrama</td></tr>

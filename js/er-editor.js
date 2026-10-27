@@ -146,35 +146,32 @@
       lines += `<line x1="${o.x}" y1="${o.y}" x2="${a.x}" y2="${a.y}" stroke="${P.line}" stroke-width="1.5"/>`;
     });
 
-    // Líneas de relaciones con sus participaciones (mín, máx)
+    // Líneas de relaciones (pueden estar curvadas) con sus participaciones (mín, máx)
+    let handles = '';
     nodes.forEach((r) => {
       if (r.kind !== 'rel') return;
-      const counts = {};
-      (r.parts || []).forEach((p) => { counts[p.entity] = (counts[p.entity] || 0) + 1; });
-      const seen = {};
-      (r.parts || []).forEach((p) => {
-        const e = byId(p.entity);
-        if (!e) return;
-        const k = counts[p.entity];
-        const i = seen[p.entity] = (seen[p.entity] === undefined ? 0 : seen[p.entity] + 1);
-        let dx = e.x - r.x, dy = e.y - r.y;
-        const len = Math.hypot(dx, dy) || 1;
-        const ux = dx / len, uy = dy / len;
-        const px = -uy, py = ux;
-        const off = (i - (k - 1) / 2) * 30;
-        const x1 = r.x + px * off, y1 = r.y + py * off;
-        const x2 = e.x + px * off, y2 = e.y + py * off;
-        lines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${P.line}" stroke-width="1.8"/>`;
-        // punto del borde de la entidad, desplazado según offset
-        const b = boundary(e, -ux, -uy);
-        const bx = b.x + px * off, by = b.y + py * off;
-        const side = off >= 0 ? 1 : -1;
-        const lx = bx - ux * 24 + px * 14 * side, ly = by - uy * 24 + py * 14 * side + 4;
+      partGeometry(r).forEach((G) => {
+        const { p, i, P0, P2, C, mid, nx, ny, side } = G;
+        const d = `M ${P0.x} ${P0.y} Q ${C.x} ${C.y} ${P2.x} ${P2.y}`;
+        lines += `<path d="${d}" fill="none" stroke="${P.line}" stroke-width="1.8"/>`;
+        if (!forExport) {
+          // zona invisible más ancha para poder agarrar la línea con el ratón
+          lines += `<path class="er-line-hit" data-rel="${r.id}" data-part="${i}" d="${d}" fill="none" stroke="transparent" stroke-width="14"/>`;
+          if (r.id === selectedId) {
+            handles += `<circle class="er-handle" data-rel="${r.id}" data-part="${i}" cx="${mid.x}" cy="${mid.y}" r="6.5" fill="${P.hl}" stroke="${P.stroke}" stroke-width="1.6"/>`;
+          }
+        }
+        // (mín, máx): un poco más allá del borde de la entidad, por el lado exterior de la curva
+        const L = labelPoint(G);
         const txt = '(' + (p.min || '0') + ',' + (p.max || 'N') + ')';
-        labels += `<text x="${lx}" y="${ly}" text-anchor="middle" font-family='${FONT}' font-size="13" font-weight="700" fill="${P.label}" paint-order="stroke" stroke="${P.halo}" stroke-width="4">${txt}</text>`;
+        labels += `<text x="${L.x}" y="${L.y + 4}" text-anchor="middle" font-family='${FONT}' font-size="13" font-weight="700" fill="${P.label}" paint-order="stroke" stroke="${P.halo}" stroke-width="4">${txt}</text>`;
         if (p.role) {
-          const mx = (x1 + x2) / 2 - px * 12 * side, my = (y1 + y2) / 2 - py * 12 * side + 4;
-          labels += `<text x="${mx}" y="${my}" text-anchor="middle" font-family='${FONT}' font-size="12" font-style="italic" fill="${P.line}" paint-order="stroke" stroke="${P.halo}" stroke-width="4">${esc(p.role)}</text>`;
+          // el rol se escribe junto al centro de su línea, hacia fuera, para que no se solape con el de otra línea
+          const ox = nx * side, oy = ny * side;
+          const beside = Math.abs(ox) > 0.5;
+          const anchor = beside ? (ox > 0 ? 'start' : 'end') : 'middle';
+          const mx = mid.x + ox * 10, my = mid.y + (beside ? 0 : oy * 16) + 4;
+          labels += `<text x="${mx}" y="${my}" text-anchor="${anchor}" font-family='${FONT}' font-size="12" font-style="italic" fill="${P.line}" paint-order="stroke" stroke="${P.halo}" stroke-width="4">${esc(p.role)}</text>`;
         }
       });
     });
@@ -196,7 +193,7 @@
         if (n.identifying) g += `<polygon points="${pts(12, 6)}" fill="none" stroke="${P.stroke}" stroke-width="1.6"/>`;
         g += `<text y="5" text-anchor="middle" font-family='${FONT}' font-size="14" font-weight="700" fill="${P.text}">${esc(n.name)}</text>`;
         const c = cardinality(n);
-        if (c) g += `<text y="${-h / 2 - 8}" text-anchor="middle" font-family='${FONT}' font-size="13" font-weight="700" fill="${P.label}">${c}</text>`;
+        if (c) g += `<text y="${-h / 2 - 8}" text-anchor="middle" font-family='${FONT}' font-size="13" font-weight="700" fill="${P.label}" paint-order="stroke" stroke="${P.halo}" stroke-width="4">${c}</text>`;
       } else {
         const rx = w / 2, ry = h / 2;
         if (sel) g += `<ellipse rx="${rx + 7}" ry="${ry + 7}" fill="${P.hl}" opacity=".85"/>`;
@@ -214,7 +211,63 @@
       shapes += g;
     });
 
-    return `<g class="er-lines">${lines}</g><g class="er-shapes">${shapes}</g><g class="er-labels" pointer-events="none">${labels}</g>`;
+    return `<g class="er-lines">${lines}</g><g class="er-shapes">${shapes}</g><g class="er-labels" pointer-events="none">${labels}</g><g class="er-handles">${handles}</g>`;
+  }
+
+  /* ---------------- Geometría de las líneas de relación ----------------
+     Cada línea es una curva cuadrática entre el rombo y la entidad. part.bend es lo que se separa
+     el centro de la curva de la recta (en perpendicular). Si no se ha tocado, las líneas de una
+     relación reflexiva salen ya curvadas, una hacia cada lado, para que no se tapen. */
+  const REFLEXIVE_BEND = 85;
+  function partGeometry(r) {
+    const out = [];
+    const counts = {};
+    (r.parts || []).forEach((p) => { counts[p.entity] = (counts[p.entity] || 0) + 1; });
+    const seen = {};
+    (r.parts || []).forEach((p, idx) => {
+      const e = byId(p.entity);
+      if (!e) return;
+      const k = counts[p.entity];
+      const j = seen[p.entity] = (seen[p.entity] === undefined ? 0 : seen[p.entity] + 1);
+      const dx = e.x - r.x, dy = e.y - r.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len, uy = dy / len;
+      const nx = -uy, ny = ux;
+      const off = (j - (k - 1) / 2) * (k > 1 ? 40 : 30);
+      let bend = typeof p.bend === 'number' ? p.bend : 0;
+      if (typeof p.bend !== 'number' && k > 1 && off !== 0) bend = Math.sign(off) * Math.max(REFLEXIVE_BEND, len * 0.32);
+      const P0 = { x: r.x + nx * off, y: r.y + ny * off };
+      const P2 = { x: e.x + nx * off, y: e.y + ny * off };
+      const M = { x: (P0.x + P2.x) / 2, y: (P0.y + P2.y) / 2 };
+      const C = { x: M.x + nx * 2 * bend, y: M.y + ny * 2 * bend };
+      const mid = { x: M.x + nx * bend, y: M.y + ny * bend };
+      const side = bend !== 0 ? Math.sign(bend) : (off >= 0 ? 1 : -1);
+      out.push({ p, i: idx, e, r, P0, P2, C, M, mid, nx, ny, side, bend });
+    });
+    return out;
+  }
+  function qPoint(G, t) {
+    const a = (1 - t) * (1 - t), b = 2 * (1 - t) * t, c = t * t;
+    return { x: a * G.P0.x + b * G.C.x + c * G.P2.x, y: a * G.P0.y + b * G.C.y + c * G.P2.y };
+  }
+  function labelPoint(G) {
+    // se recorre la curva desde la entidad hacia el rombo hasta salir de la entidad y 24 unidades más
+    const { w, h } = size(G.e);
+    const inside = (pt) => Math.abs(pt.x - G.e.x) <= w / 2 && Math.abs(pt.y - G.e.y) <= h / 2;
+    let t = 1, prev = qPoint(G, 1), out = null, dist = 0;
+    for (let s = 0; s < 400; s++) {
+      t -= 0.0025;
+      if (t <= 0) break;
+      const pt = qPoint(G, t);
+      if (!out) { if (!inside(pt)) out = pt; }
+      else { dist += Math.hypot(pt.x - prev.x, pt.y - prev.y); if (dist >= 24) { prev = pt; break; } }
+      prev = pt;
+    }
+    // dirección de la curva en ese punto y perpendicular hacia el lado exterior
+    const a = qPoint(G, Math.max(0, t - 0.01)), b = qPoint(G, Math.min(1, t + 0.01));
+    let tx = b.x - a.x, ty = b.y - a.y; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+    const nx = -ty, ny = tx;
+    return { x: prev.x + nx * 14 * G.side, y: prev.y + ny * 14 * G.side };
   }
 
   function render() {
@@ -287,10 +340,110 @@
     return n;
   }
 
+  /* ---- Espacio libre: evita colocar elementos encima de otros o de las líneas de las relaciones ---- */
+  function boxAt(x, y, w, h, pad) { return { x0: x - w / 2 - pad, y0: y - h / 2 - pad, x1: x + w / 2 + pad, y1: y + h / 2 + pad }; }
+  function boxOf(n, pad) { const { w, h } = size(n); return boxAt(n.x, n.y, w, h, pad || 0); }
+  const hitBox = (a, b) => !(a.x1 <= b.x0 || b.x1 <= a.x0 || a.y1 <= b.y0 || b.y1 <= a.y0);
+  const inBox = (pt, b) => pt.x > b.x0 && pt.x < b.x1 && pt.y > b.y0 && pt.y < b.y1;
+  /* Obstáculos que dejan las relaciones: puntos de cada línea y, en las reflexivas, la zona
+     encerrada entre sus dos curvas (un polígono). */
+  function obstacles() {
+    const pts = [], polys = [], boxes = [];
+    nodesOf('rel').forEach((r) => {
+      const geo = partGeometry(r);
+      // zona de cada etiqueta (mín, máx)
+      geo.forEach((G) => {
+        const L = labelPoint(G); boxes.push(boxAt(L.x, L.y, 44, 18, 2));
+        if (G.p.role) {   // texto del rol, junto al centro de la línea
+          const ox = G.nx * G.side, oy = G.ny * G.side, rw = textWidth(G.p.role, 12) + 6;
+          const beside = Math.abs(ox) > 0.5, cx = G.mid.x + ox * 10 + (beside ? Math.sign(ox) * rw / 2 : 0), cy = G.mid.y + (beside ? 0 : oy * 16);
+          boxes.push(boxAt(cx, cy, rw, 18, 2));
+        }
+      });
+      const curves = geo.map((G) => { const c = []; for (let t = 0; t <= 1.0001; t += 0.015) c.push(qPoint(G, t)); return c; });
+      curves.forEach((c, k) => {
+        const eb = boxOf(geo[k].e, 2), rb = boxOf(geo[k].r, 2);
+        c.forEach((pt) => { if (!inBox(pt, eb) && !inBox(pt, rb)) pts.push(pt); });
+      });
+      // lazo de una reflexiva: dos líneas a la misma entidad
+      for (let a = 0; a < geo.length; a++) for (let b = a + 1; b < geo.length; b++) {
+        if (geo[a].e === geo[b].e) polys.push(curves[a].concat(curves[b].slice().reverse()));
+      }
+    });
+    return { pts, polys, boxes };
+  }
+  function inPoly(pt, poly) {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[i], b = poly[j];
+      if ((a.y > pt.y) !== (b.y > pt.y) && pt.x < (b.x - a.x) * (pt.y - a.y) / (b.y - a.y) + a.x) inside = !inside;
+    }
+    return inside;
+  }
+  /* cuántos choques tendría una caja (y, si se indica, la línea que la une con su dueño) */
+  function collisions(box, exclude, obs, seg) {
+    let c = 0;
+    ER.diagram.nodes.forEach((m) => { if (!exclude.has(m.id) && hitBox(box, boxOf(m, 6))) c += 3; });
+    if (!obs) return c;
+    obs.pts.forEach((pt) => { if (inBox(pt, box)) c += 1; });
+    obs.boxes.forEach((b) => { if (hitBox(box, b)) c += 2; });
+    const corners = [{ x: (box.x0 + box.x1) / 2, y: (box.y0 + box.y1) / 2 }, { x: box.x0, y: box.y0 }, { x: box.x1, y: box.y0 }, { x: box.x0, y: box.y1 }, { x: box.x1, y: box.y1 }];
+    obs.polys.forEach((poly) => { if (corners.some((pt) => inPoly(pt, poly))) c += 3; });
+    if (seg) {
+      const L = Math.hypot(seg.x2 - seg.x1, seg.y2 - seg.y1), steps = Math.max(2, Math.ceil(L / 5));
+      const ownBox = seg.owner ? boxOf(seg.owner, 4) : null;
+      for (let i = 1; i < steps; i++) {
+        const q = { x: seg.x1 + (seg.x2 - seg.x1) * i / steps, y: seg.y1 + (seg.y2 - seg.y1) * i / steps };
+        if (ownBox && inBox(q, ownBox)) continue;
+        if (obs.pts.some((pt) => Math.hypot(pt.x - q.x, pt.y - q.y) < 10)) { c += 2; break; }
+      }
+      // la línea del atributo tampoco debe atravesar otros elementos ni etiquetas
+      for (let i = 1; i < steps; i++) {
+        const q = { x: seg.x1 + (seg.x2 - seg.x1) * i / steps, y: seg.y1 + (seg.y2 - seg.y1) * i / steps };
+        if (inBox(q, box) || (ownBox && inBox(q, ownBox))) continue;
+        if (ER.diagram.nodes.some((m) => !exclude.has(m.id) && inBox(q, boxOf(m, 2))) || obs.boxes.some((b) => inBox(q, b))) { c += 2; break; }
+      }
+    }
+    return c;
+  }
+  /* sitio para una relación reflexiva: la dirección con más espacio alrededor de la entidad */
+  function reflexivePlace(e) {
+    const tmpName = uniqueName('Relación', 'rel');
+    let best = null;
+    const others = new Set([e.id]);
+    attrsOf(e.id).forEach((a) => others.delete(a.id));
+    [0, 180, -90, 90, 45, -45, 135, -135].forEach((ang, order) => {
+      const rad = ang * Math.PI / 180;
+      const { w, h } = size(e);
+      const dist = Math.abs(Math.cos(rad)) > 0.5 ? w / 2 + 230 : h / 2 + 200;
+      const tmp = { id: '__tmp', kind: 'rel', name: tmpName, x: e.x + Math.cos(rad) * dist, y: e.y + Math.sin(rad) * dist,
+                    parts: [{ entity: e.id, min: '1', max: '1' }, { entity: e.id, min: '0', max: 'N' }] };
+      let score = collisions(boxOf(tmp, 10), others, obstacles());
+      // las dos curvas y su zona de etiquetas tampoco deben pisar nada
+      partGeometry(tmp).forEach((G) => {
+        for (let t = 0.15; t < 0.95; t += 0.05) {
+          const pt = qPoint(G, t);
+          ER.diagram.nodes.forEach((m) => { if (m.id !== e.id && inBox(pt, boxOf(m, 10))) score += 2; });
+        }
+      });
+      const geoT = partGeometry(tmp);
+      if (geoT.length === 2) {
+        const loop = [];
+        for (let t = 0; t <= 1.0001; t += 0.04) loop.push(qPoint(geoT[0], t));
+        for (let t = 1; t >= -0.0001; t -= 0.04) loop.push(qPoint(geoT[1], t));
+        ER.diagram.nodes.forEach((m) => { if (m.id !== e.id && inPoly(m, loop)) score += 3; });
+      }
+      score += order * 0.01;   // a igualdad, se prefiere la derecha, luego la izquierda, arriba y abajo
+      if (!best || score < best.score) best = { score, x: tmp.x, y: tmp.y };
+    });
+    return best;
+  }
+
   function addRel(entityA, entityB) {
     let x, y;
     const a = entityA && byId(entityA), b = entityB && byId(entityB);
     if (a && b && a !== b) { x = (a.x + b.x) / 2; y = (a.y + b.y) / 2; }
+    else if (a && b && a === b) { const pl = reflexivePlace(a); x = pl.x; y = pl.y; }
     else if (a) { x = a.x + 230; y = a.y; }
     else { const c = viewCenter(); x = c.x; y = c.y; }
     const parts = [];
@@ -319,12 +472,42 @@
       const { w, h } = size(o);
       dist = (Math.abs(Math.cos(ang * Math.PI / 180)) > 0.7 ? w / 2 + 70 : h / 2 + 62) + Math.floor(siblings.length / ANGLES.length) * 40;
     }
-    const rad = ang * Math.PI / 180;
     const isFirst = o.kind === 'entity' && !o.weak && siblings.length === 0;
     const nm = name || (isFirst ? 'id_' + U.sqlIdent(o.name).toLowerCase() : 'atributo' + (siblings.length + 1));
+    const probe = { kind: 'attr', name: nm, key: isFirst };
+    const { w: aw, h: ah } = size(probe);
+    // se prueban varias posiciones alrededor del propietario y se elige la primera sin choques
+    const obs = obstacles();
+    const exclude = new Set([o.id]);
+    const cands = [];
+    if (o.kind === 'attr') {
+      const gp = byId(o.owner);
+      const base = gp ? Math.atan2(o.y - gp.y, o.x - gp.x) * 180 / Math.PI : -90;
+      [0, -40, 40, -80, 80, -120, 120].forEach((d) => [0, 1, 2].forEach((ring) => cands.push({ ang: base + d, dist: 78 + ring * 40, ring })));
+    } else {
+      const { w, h } = size(o);
+      const ALL = ANGLES.concat(Array.from({ length: 24 }, (_, k) => k * 15 - 180).filter((a) => !ANGLES.includes(a)));
+      [0, 1, 2, 3, 4, 5].forEach((ring) => ALL.forEach((a2) => {
+        const horiz = Math.abs(Math.cos(a2 * Math.PI / 180)) > 0.7;
+        cands.push({ ang: a2, dist: (horiz ? w / 2 + aw / 2 + 24 : h / 2 + 62) + ring * 42, ring });
+      }));
+    }
+    cands.sort((c1, c2) => c1.ring - c2.ring);
+    let pick = null, bestScore = Infinity;
+    for (const c of cands) {
+      const r2 = c.ang * Math.PI / 180;
+      const x = o.x + Math.cos(r2) * c.dist, y = o.y + Math.sin(r2) * c.dist;
+      const sc = collisions(boxAt(x, y, aw, ah, 6), exclude, obs, { x1: o.x, y1: o.y, x2: x, y2: y, owner: o }) + c.ring * 0.1;
+      if (sc < bestScore) { bestScore = sc; pick = { x, y }; }
+      if (sc < 0.5) break;   // primer hueco libre
+    }
+    if (!pick) {
+      const r2 = ang * Math.PI / 180;
+      pick = { x: o.x + Math.cos(r2) * dist, y: o.y + Math.sin(r2) * dist };
+    }
     const n = {
       id: uid('a'), kind: 'attr', name: nm, owner: o.id,
-      x: Math.round(o.x + Math.cos(rad) * dist), y: Math.round(o.y + Math.sin(rad) * dist),
+      x: Math.round(pick.x), y: Math.round(pick.y),
       key: isFirst, partial: false, multi: false, derived: false, required: false,
       dtype: guessType(nm, isFirst)
     };
@@ -412,7 +595,11 @@
             <input class="grow" data-f="role" type="text" placeholder="rol (opcional)" value="${esc(p.role || '')}" aria-label="Rol">
           </div></div>`;
       });
+      const curved = (n.parts || []).some((p) => typeof p.bend === 'number');
       h += `<button class="btn" id="pAddPart"${nodesOf('entity').length ? '' : ' disabled'}>Añadir participante</button></div>
+        <div class="props-section"><h4>Líneas</h4>
+          <p class="props-help">Arrastra una línea de la relación para curvarla y separarla de otras. Doble clic sobre ella para devolverla a su forma original.</p>
+          <button class="btn" id="pStraighten"${curved ? '' : ' disabled'}>Enderezar todas las líneas</button></div>
         <div class="props-section"><h4>Atributos de la relación</h4>${attrListHtml(n.id)}${addAttrRow('p. ej. fecha, nota…')}</div>`;
     } else {
       const owner = byId(n.owner);
@@ -523,16 +710,38 @@
       n.parts.push({ entity: e.id, min: '0', max: 'N', role: '' });
       render(); renderProps(); commit();
     });
+    const st = $('pStraighten');
+    if (st) st.addEventListener('click', () => {
+      (n.parts || []).forEach((p) => { delete p.bend; });
+      render(); renderProps(); commit();
+    });
     const del = $('pDelete');
     if (del) del.addEventListener('click', deleteSelected);
   }
 
   /* ---------------- Interacción con el lienzo ---------------- */
-  let drag = null, pan = null;
+  let drag = null, pan = null, bendDrag = null;
+
+  function lineTarget(target) {
+    const el = target.closest && target.closest('.er-line-hit, .er-handle');
+    if (!el) return null;
+    const r = byId(el.dataset.rel);
+    if (!r) return null;
+    return { r, i: +el.dataset.part };
+  }
 
   function onPointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     svg.focus({ preventScroll: true });
+    const lt = lineTarget(e.target);
+    if (lt) {
+      // agarrar una línea de relación: se curva al arrastrar
+      if (ER.selected !== lt.r.id) select(lt.r.id);
+      const G = partGeometry(lt.r).find((g) => g.i === lt.i);
+      if (G) bendDrag = { part: G.p, M: G.M, nx: G.nx, ny: G.ny, start: G.bend, moved: false };
+      svg.setPointerCapture(e.pointerId);
+      return;
+    }
     const g = e.target.closest('.er-node');
     if (g) {
       const n = byId(g.dataset.id);
@@ -548,6 +757,17 @@
     svg.setPointerCapture(e.pointerId);
   }
   function onPointerMove(e) {
+    if (bendDrag) {
+      const p = toWorld(e.clientX, e.clientY);
+      let b = (p.x - bendDrag.M.x) * bendDrag.nx + (p.y - bendDrag.M.y) * bendDrag.ny;
+      if (Math.abs(b) < 8) b = 0;   // cerca de la recta, se endereza
+      b = Math.round(b);
+      if (!bendDrag.moved && Math.abs(b - bendDrag.start) < 3) return;
+      bendDrag.moved = true;
+      bendDrag.part.bend = b;
+      render();
+      return;
+    }
     if (drag) {
       const p = toWorld(e.clientX, e.clientY);
       const dx = p.x - drag.sx, dy = p.y - drag.sy;
@@ -564,15 +784,28 @@
     }
   }
   function onPointerUp() {
+    if (bendDrag) {
+      if (bendDrag.moved) commit();
+      bendDrag = null;
+      return;
+    }
     if (drag && drag.moved) commit();
     if (pan && !pan.moved && ER.selected) select(null);
     drag = null; pan = null;
     svg.classList.remove('panning');
   }
   function onDblClick(e) {
-    const g = e.target.closest('.er-node');
-    if (g) { select(g.dataset.id); focusName(); return; }
-    addEntity(toWorld(e.clientX, e.clientY));
+    // con la captura del puntero, e.target puede ser el lienzo: se mira qué hay realmente bajo el ratón
+    const target = document.elementFromPoint(e.clientX, e.clientY) || e.target;
+    const lt = lineTarget(target);
+    if (lt) {
+      // doble clic en una línea: vuelve a su forma original
+      const part = lt.r.parts[lt.i];
+      if (part && 'bend' in part) { delete part.bend; render(); commit(); toast('Línea enderezada'); }
+      return;
+    }
+    const g = target.closest('.er-node');
+    if (g) { select(g.dataset.id); focusName(); }
   }
   function onWheel(e) {
     e.preventDefault();

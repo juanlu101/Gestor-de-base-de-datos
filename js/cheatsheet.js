@@ -150,7 +150,16 @@
       <p>Encima del rombo se muestra la cardinalidad de la relación (1:1, 1:N o N:M), que se obtiene de los máximos.</p>
 
       <h2>2. Del diagrama a las tablas</h2>
-      <p>Una vez terminado el diagrama, tienes que transformarlo tú en el modelo relacional aplicando estas reglas, y después escribir el código <code>CREATE TABLE</code> en la pestaña <strong>Base de datos SQL</strong>.</p>
+      <p>Una vez terminado el diagrama, tienes que transformarlo tú en tablas aplicando estas reglas. Hazlo en la pestaña <strong>Paso a tablas</strong>:</p>
+      <ol class="steps">
+        <li>Pulsa <strong>Tabla</strong> para crear una tabla por cada entidad. En el panel de la derecha, añade sus columnas, elige el tipo de dato de cada una y marca la <strong>clave primaria</strong>.</li>
+        <li>Para una relación <strong>1:N</strong>, selecciona la tabla del lado N y usa <strong>Pasar una clave primaria</strong>: se copia la clave primaria del lado 1 como clave ajena.</li>
+        <li>Para una relación <strong>N:M</strong>, crea una tabla nueva, pasa las claves primarias de las dos tablas, márcalas como clave primaria y añade los atributos de la relación.</li>
+        <li>También puedes convertir una columna en clave ajena arrastrando su punto azul hasta la clave primaria de otra tabla, o eligiendo en <em>Apunta a</em> la columna a la que apunta.</li>
+        <li>Cada clave ajena se dibuja como una flecha hasta su clave primaria. Si los tipos de dato no coinciden, la flecha sale roja y discontinua.</li>
+        <li>Pulsa <strong>Llevar a SQL</strong>: el código <code>CREATE TABLE</code> de tus tablas aparece en la pestaña <strong>Base de datos SQL</strong>, en el orden correcto, listo para ejecutarlo.</li>
+      </ol>
+      <p>Las tablas se pueden guardar y abrir desde <em>Archivo</em> (.json) y exportar como imagen para entregarlas.</p>
       <div class="doc-table-wrap"><table class="ref">
         <tr><th>En el diagrama</th><th>En las tablas</th></tr>
         <tr><td>Entidad</td><td>Una tabla con sus atributos. El identificador es la clave primaria.</td></tr>
@@ -176,15 +185,16 @@
         <li>Pulsar el nombre de una tabla en el panel izquierdo para ver sus datos, o una columna para escribir su nombre en el editor.</li>
         <li>Descargar la base de datos como script <code>.sql</code> o como archivo <code>.db</code>.</li>
       </ul>
-      <p>El diagrama, la base de datos y lo que escribes en el editor SQL se conservan mientras la pestaña está abierta, aunque recargues la página. <strong>Al cerrar la pestaña o el navegador se borran</strong>, para que el siguiente grupo empiece de cero. Descarga tu trabajo para entregarlo o guardarlo: el diagrama desde <em>Archivo</em> (.json o imagen) y la base de datos desde <em>Exportar</em> (.sql o .db). El botón <strong>Empezar de cero</strong>, arriba a la derecha, lo borra todo en cualquier momento.</p>
+      <p>El diagrama, las tablas, la base de datos y lo que escribes en el editor SQL se conservan mientras la pestaña está abierta, aunque recargues la página. <strong>Al cerrar la pestaña o el navegador se borran</strong>, para que el siguiente grupo empiece de cero. Descarga tu trabajo para entregarlo o guardarlo: el diagrama y las tablas desde <em>Archivo</em> (.json o imagen) y la base de datos desde <em>Exportar</em> (.sql o .db). El botón <strong>Empezar de cero</strong>, arriba a la derecha, lo borra todo en cualquier momento.</p>
 
       <h2>4. Atajos de teclado</h2>
       <div class="doc-table-wrap"><table class="ref">
         <tr><th>Tecla</th><th>Acción</th></tr>
         <tr><td>Arrastrar una línea de relación</td><td>Curvarla, por ejemplo para separar las dos líneas de una relación reflexiva</td></tr>
         <tr><td>Doble clic en una línea curvada</td><td>Devolverla a su forma original</td></tr>
+        <tr><td>Arrastrar el punto azul de una columna</td><td>En Paso a tablas, convertirla en clave ajena soltándola sobre una clave primaria</td></tr>
         <tr><td>Supr o Retroceso</td><td>Eliminar el elemento seleccionado</td></tr>
-        <tr><td>Ctrl + Z / Ctrl + Y</td><td>Deshacer y rehacer en el diagrama</td></tr>
+        <tr><td>Ctrl + Z / Ctrl + Y</td><td>Deshacer y rehacer en el diagrama y en las tablas</td></tr>
         <tr><td>Rueda del ratón</td><td>Acercar y alejar el diagrama</td></tr>
         <tr><td>Esc</td><td>Quitar la selección</td></tr>
         <tr><td>Ctrl + Intro</td><td>Ejecutar el SQL</td></tr>

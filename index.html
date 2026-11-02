@@ -29,6 +29,7 @@
 
     <nav class="tabs" role="tablist" aria-label="Secciones">
       <button role="tab" class="tab" data-view="er" aria-selected="true">Diagrama E/R</button>
+      <button role="tab" class="tab" data-view="tables" aria-selected="false">Paso a tablas</button>
       <button role="tab" class="tab" data-view="sql" aria-selected="false">Base de datos SQL</button>
       <button role="tab" class="tab" data-view="cheat" aria-selected="false">Chuleta SQL</button>
       <button role="tab" class="tab" data-view="help" aria-selected="false">Ayuda</button>
@@ -95,6 +96,56 @@
         </div>
         <aside class="props" id="erProps" aria-label="Propiedades del elemento seleccionado"></aside>
       </div>
+    </section>
+
+    <!-- ============ PASO A TABLAS ============ -->
+    <section class="view" id="view-tables" role="tabpanel" hidden>
+      <div class="toolbar">
+        <div class="tgroup">
+          <button class="btn primary" id="tbAddTable" title="Añadir una tabla">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="3" width="16" height="14"/><path d="M2 7.5 H18"/></svg>Tabla</button>
+        </div>
+        <div class="tgroup">
+          <button class="btn" id="tbUndo" title="Deshacer (Ctrl+Z)">Deshacer</button>
+          <button class="btn" id="tbRedo" title="Rehacer (Ctrl+Y)">Rehacer</button>
+          <button class="btn danger-ghost" id="tbDelete" title="Eliminar la tabla o la flecha seleccionada (Supr)">Eliminar</button>
+        </div>
+        <div class="tgroup">
+          <button class="btn icon" id="tbZoomOut" title="Alejar" aria-label="Alejar">−</button>
+          <span class="zoom-label" id="tbZoomLabel">100%</span>
+          <button class="btn icon" id="tbZoomIn" title="Acercar" aria-label="Acercar">+</button>
+          <button class="btn" id="tbFit" title="Encajar todas las tablas en pantalla">Encajar</button>
+        </div>
+        <div class="tgroup push">
+          <button class="btn go" id="tbToSql" title="Escribe el CREATE TABLE de tus tablas en la pestaña Base de datos SQL">Llevar a SQL</button>
+          <details class="menu">
+            <summary class="btn">Archivo</summary>
+            <div class="menu-list">
+              <button id="tbNew">Empezar en blanco</button>
+              <button id="tbOpen">Abrir tablas (.json)</button>
+              <button id="tbSave">Guardar tablas (.json)</button>
+              <hr>
+              <button id="tbPng">Exportar imagen PNG</button>
+              <button id="tbSvg">Exportar imagen SVG</button>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <div class="er-workspace">
+        <div class="er-canvas-wrap" id="tbCanvasWrap">
+          <svg id="tbCanvas" class="er-canvas" tabindex="0" aria-label="Diagrama de tablas">
+            <g id="tbWorld"></g>
+          </svg>
+          <div class="er-empty" id="tbEmpty">
+            <p class="er-empty-title">Todavía no hay tablas</p>
+            <p>Pulsa <strong>Tabla</strong> en la barra de arriba para crear la primera. Haz una tabla por cada entidad de tu diagrama.</p>
+          </div>
+          <p class="er-hint">Arrastra el punto azul de una columna hasta la clave primaria de otra tabla para crear una clave ajena. Arrastra una tabla para moverla.</p>
+        </div>
+        <aside class="props" id="tbProps" aria-label="Propiedades de la tabla seleccionada"></aside>
+      </div>
+      <datalist id="tbTypes"></datalist>
     </section>
 
     <!-- ============ BASE DE DATOS SQL ============ -->
@@ -189,6 +240,7 @@
   <script src="js/util.js"></script>
   <script src="js/examples.js"></script>
   <script src="js/er-editor.js"></script>
+  <script src="js/tables-editor.js"></script>
   <script src="js/db.js"></script>
   <script src="js/code-editor.js"></script>
   <script src="js/cheatsheet.js"></script>

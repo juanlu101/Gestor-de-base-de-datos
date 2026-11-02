@@ -11,6 +11,7 @@
     if (t) document.documentElement.setAttribute('data-theme', t);
     else document.documentElement.removeAttribute('data-theme');
     if (window.ER && ER.render) try { ER.render(); } catch (e) { /* aún no iniciado */ }
+    if (window.TB && TB.render) try { TB.render(); } catch (e) { /* aún no iniciado */ }
   }
   function currentTheme() {
     const t = document.documentElement.getAttribute('data-theme');
@@ -27,11 +28,11 @@
 
   /* Empezar de cero: borra todo el trabajo de esta pestaña */
   $('#resetAll').addEventListener('click', () => {
-    if (!confirm('Se borrarán el diagrama, la base de datos, lo escrito en el editor SQL y el historial.\n\nSi quieres conservar algo, descárgalo antes desde los menús Archivo y Exportar.\n\n¿Empezar de cero?')) return;
+    if (!confirm('Se borrarán el diagrama, las tablas, la base de datos, lo escrito en el editor SQL y el historial.\n\nSi quieres conservar algo, descárgalo antes desde los menús Archivo y Exportar.\n\n¿Empezar de cero?')) return;
     U.storage.clearAll();
     location.reload();
   });
-  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (ER.render) ER.render(); });
+  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (ER.render) ER.render(); if (TB.render) TB.render(); });
 
   /* ---------------- Pestañas ---------------- */
   function showView(name) {
@@ -39,6 +40,7 @@
     $$('.view').forEach((v) => { const on = v.id === 'view-' + name; v.hidden = !on; v.classList.toggle('active', on); });
     U.storage.set('sgbd.tab', name);
     if (name === 'er') requestAnimationFrame(() => { ER.render(); if (!ER._fitted) { ER.fit(); ER._fitted = true; } });
+    if (name === 'tables') requestAnimationFrame(() => { TB.render(); if (!TB._fitted) { TB.fit(); TB._fitted = true; } });
     if (name === 'sql') renderSchema();
   }
   $$('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
@@ -72,6 +74,9 @@
     toast('Ejemplo abierto: ' + ex.name, 'ok');
   });
   ER.init();
+
+  /* ---------------- Paso a tablas ---------------- */
+  TB.init();
 
   /* ---------------- Gestor SQL ---------------- */
   const SQL_DRAFT = 'sgbd.sqlDraft';
@@ -321,6 +326,25 @@
     if (DB.inTransaction) { toast('Termina antes la transacción con COMMIT o ROLLBACK.'); return; }
     U.download(fileBase() + '.db', new Blob([DB.exportBinary()], { type: 'application/x-sqlite3' }));
   });
+
+  /* Recibe el CREATE TABLE generado en la pestaña Paso a tablas */
+  window.App = {
+    openInSql(sql) {
+      const cur = sqlEditor.value.trim();
+      if (cur && cur !== sql.trim() && !confirm('Se sustituirá lo que hay escrito en el editor SQL por el CREATE TABLE de tus tablas. ¿Continuar?')) return;
+      sqlEditor.value = sql;
+      U.storage.set(SQL_DRAFT, sql);
+      showView('sql');
+      const empty = !hasData();
+      $('#sqlResults').innerHTML = `<div class="res ok"><div class="res-msg"><strong>Tus tablas están en el editor.</strong> Pulsa <strong>Ejecutar</strong> para crearlas.
+        ${empty ? '' : '<span class="hint">La base de datos abierta ya tiene tablas. Si quieres empezar limpio, pulsa antes <strong>Abrir base de datos</strong> y elige <em>Nueva base de datos vacía</em>.</span>'}
+        <span class="hint">Si algo falla, revisa el mensaje de error: suele deberse a un nombre repetido o a una clave ajena que apunta a una tabla que no existe.</span></div></div>`;
+      sqlEditor.focus();
+      // que se vea el principio del guion, no el final
+      const ta = $('#sqlEditorHost textarea');
+      if (ta) { ta.setSelectionRange(0, 0); ta.scrollTop = 0; ta.dispatchEvent(new Event('scroll')); }
+    }
+  };
 
   /* ---------------- Chuleta y ayuda ---------------- */
   Cheat.renderCheat((sql) => {

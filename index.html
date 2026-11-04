@@ -236,11 +236,41 @@
   <input type="file" id="fileSql" accept=".sql,.txt" hidden>
   <input type="file" id="fileDb" accept=".db,.sqlite,.sqlite3,.db3" hidden>
 
+
+  <!-- ============ ESQUEMA VISUAL DE LA BASE DE DATOS ============ -->
+  <dialog class="schema-dialog" id="schemaDialog" aria-labelledby="schemaDialogTitle">
+    <div class="sd-head">
+      <div class="sd-titles">
+        <h2 id="schemaDialogTitle">Esquema de la base de datos</h2>
+        <p id="sdCount"></p>
+      </div>
+      <div class="sd-tools">
+        <button class="btn icon" id="sdZoomOut" title="Alejar" aria-label="Alejar">−</button>
+        <span class="zoom-label" id="sdZoom">100%</span>
+        <button class="btn icon" id="sdZoomIn" title="Acercar" aria-label="Acercar">+</button>
+        <button class="btn" id="sdFit" title="Encajar todo el esquema en la ventana">Encajar</button>
+        <button class="btn" id="sdReorder" title="Volver a colocar las tablas como al principio">Ordenar</button>
+        <button class="btn" id="sdPng" title="Descargar el esquema como imagen PNG">Descargar imagen</button>
+        <button class="btn icon" id="sdClose" title="Cerrar (Esc)" aria-label="Cerrar">×</button>
+      </div>
+    </div>
+    <div class="sd-body">
+      <svg id="sdCanvas" class="er-canvas" aria-label="Esquema de las tablas con sus claves primarias y ajenas"><g id="sdWorld"></g></svg>
+    </div>
+    <div class="sd-foot">
+      <span class="sd-key"><span class="sd-pk">PK</span> Clave primaria (subrayada)</span>
+      <span class="sd-key"><span class="sd-fk">FK</span> Clave ajena (en cursiva)</span>
+      <span class="sd-key"><svg viewBox="0 0 54 20" aria-hidden="true"><circle cx="5" cy="10" r="3.5" fill="var(--er-label)"/><path d="M5 10 H40" stroke="var(--er-label)" stroke-width="2"/><polygon points="50,10 39,4.5 39,15.5" fill="var(--er-label)"/></svg> Va de la clave ajena a la clave primaria a la que apunta</span>
+      <span class="sd-hint">Arrastra las tablas para verlas mejor.</span>
+    </div>
+  </dialog>
+
   <script src="js/lib/sql-wasm.js"></script>
   <script src="js/util.js"></script>
   <script src="js/examples.js"></script>
   <script src="js/er-editor.js"></script>
   <script src="js/tables-editor.js"></script>
+  <script src="js/schema-view.js"></script>
   <script src="js/db.js"></script>
   <script src="js/code-editor.js"></script>
   <script src="js/cheatsheet.js"></script>

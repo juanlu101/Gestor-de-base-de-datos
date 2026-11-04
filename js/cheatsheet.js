@@ -182,6 +182,7 @@
         <li>Cargar un script <code>.sql</code>. Si viene de MySQL o phpMyAdmin, deja marcada la opción <strong>Adaptar MySQL</strong> para convertirlo automáticamente.</li>
         <li>Abrir un archivo <code>.db</code> o <code>.sqlite</code>.</li>
         <li>Escribir cualquier sentencia en el editor y ejecutarla con <strong>Ctrl + Intro</strong>. Si escribes varias, sepáralas con punto y coma.</li>
+        <li>Pulsar <strong>Mostrar esquema</strong>, en el panel izquierdo, para ver todas las tablas con sus claves primarias y ajenas, y una flecha desde cada clave ajena hasta la clave primaria a la que apunta. Puedes mover las tablas y descargar el esquema como imagen.</li>
         <li>Pulsar el nombre de una tabla en el panel izquierdo para ver sus datos, o una columna para escribir su nombre en el editor.</li>
         <li>Descargar la base de datos como script <code>.sql</code> o como archivo <code>.db</code>.</li>
       </ul>

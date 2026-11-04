@@ -203,7 +203,8 @@
     $('#sqlResults').innerHTML = `<div class="results-empty"><h3>Aquí aparecerán los resultados</h3>
       <p>Escribe una sentencia en el editor y pulsa <strong>Ejecutar</strong> o Ctrl + Intro. Algunas ideas para empezar:</p>
       <ul><li>Pulsa el nombre de una tabla a la izquierda para ver su contenido.</li>
-      <li>Abre la <strong>Chuleta SQL</strong> y pulsa <em>Probar</em> en cualquier ejemplo.</li>
+      <li>Pulsa <strong>Mostrar esquema</strong> para ver las tablas con sus claves primarias y ajenas.</li>
+      <li>Consulta el <strong>Resumen SQL</strong> si no recuerdas cómo se escribe una instrucción.</li>
       <li>Crea tus propias tablas con <code>CREATE TABLE</code> a partir de tu diagrama.</li></ul></div>`;
   }
 
@@ -351,17 +352,8 @@
     }
   };
 
-  /* ---------------- Chuleta y ayuda ---------------- */
-  Cheat.renderCheat((sql) => {
-    const need = !DB.schema().tables.some((t) => t.name === 'alumnos') || !DB.schema().tables.some((t) => t.name === 'matriculas');
-    if (need) {
-      if (!confirm('Este ejemplo usa la base de datos Instituto. ¿Cargarla ahora? (Se cerrará la base de datos actual)')) return;
-      loadExample('instituto', true);
-    }
-    sqlEditor.value = sql;
-    showView('sql');
-    runSql(false);
-  });
+  /* ---------------- Resumen SQL y ayuda ---------------- */
+  Cheat.renderCheat();
   Cheat.renderHelp();
 
   /* ---------------- Arranque ---------------- */

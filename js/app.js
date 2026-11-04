@@ -12,6 +12,7 @@
     else document.documentElement.removeAttribute('data-theme');
     if (window.ER && ER.render) try { ER.render(); } catch (e) { /* aún no iniciado */ }
     if (window.TB && TB.render) try { TB.render(); } catch (e) { /* aún no iniciado */ }
+    if (window.SV && SV.render) try { SV.render(); } catch (e) { /* aún no iniciado */ }
   }
   function currentTheme() {
     const t = document.documentElement.getAttribute('data-theme');
@@ -32,7 +33,7 @@
     U.storage.clearAll();
     location.reload();
   });
-  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (ER.render) ER.render(); if (TB.render) TB.render(); });
+  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (ER.render) ER.render(); if (TB.render) TB.render(); if (window.SV) SV.render(); });
 
   /* ---------------- Pestañas ---------------- */
   function showView(name) {
@@ -77,6 +78,7 @@
 
   /* ---------------- Paso a tablas ---------------- */
   TB.init();
+  SV.init();
 
   /* ---------------- Gestor SQL ---------------- */
   const SQL_DRAFT = 'sgbd.sqlDraft';
@@ -231,9 +233,12 @@
           <ul class="s-cols">${cols}</ul></details>`;
       }).join('');
     };
-    tree.innerHTML = block(s.tables, 'Tablas') + block(s.views, 'Vistas', true);
+    const diagram = s.tables.length ? `<button class="btn s-diagram" id="showSchema" title="Ver las tablas con sus claves primarias y ajenas unidas con flechas">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="1.5" y="2.5" width="7" height="6" rx="1"/><rect x="11.5" y="11.5" width="7" height="6" rx="1"/><path d="M8.5 5.5 H11 a1.5 1.5 0 0 1 1.5 1.5 V11.5"/></svg>Mostrar esquema</button>` : '';
+    tree.innerHTML = diagram + block(s.tables, 'Tablas') + block(s.views, 'Vistas', true);
   }
   $('#schemaTree').addEventListener('click', (e) => {
+    if (e.target.closest('#showSchema')) { SV.open(); return; }
     const peek = e.target.closest('[data-peek]');
     if (peek) {
       e.preventDefault();

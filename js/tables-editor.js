@@ -765,6 +765,16 @@
     updateUndo(); renderProps();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
   };
+  /* Dibuja otro modelo (por ejemplo, el esquema de la base de datos abierta) con el mismo aspecto, sin tocar el del alumno */
+  function withModel(model, fn) {
+    const m = TB.model, s = TB.sel;
+    TB.model = model; TB.sel = null;
+    try { return fn(); } finally { TB.model = m; TB.sel = s; }
+  }
+  TB.sizeOf = size;
+  TB.drawModel = (model) => withModel(model, () => ({ markup: buildMarkup(screenPalette(), true), bbox: bbox() }));
+  TB.svgStringFor = (model) => withModel(model, exportSvgString);
+
   TB.render = render;
   TB.fit = fit;
   TB.scriptSql = scriptSql;

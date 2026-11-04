@@ -1,87 +1,106 @@
-/* SGBD: chuleta SQL y ayuda. Creada por Juan Luis Torralbo Muñoz. */
+/* SGBD: resumen de SQL y ayuda. Creada por Juan Luis Torralbo Muñoz. */
 (function () {
   'use strict';
 
-  const CHEAT = [
-    { id: 'select', title: 'Consultar datos', items: [
-      { d: 'Todas las columnas y filas de una tabla.', s: 'SELECT *\nFROM alumnos;' },
-      { d: 'Solo algunas columnas, con un alias para el título.', s: 'SELECT nombre, apellidos AS "Apellidos del alumno"\nFROM alumnos;' },
-      { d: 'Valores sin repetir con DISTINCT.', s: 'SELECT DISTINCT localidad\nFROM alumnos;' },
-      { d: 'Columnas calculadas: el salario anual en 14 pagas.', s: 'SELECT nombre, salario, salario * 14 AS salario_anual\nFROM profesores;' }
-    ] },
-    { id: 'where', title: 'Filtrar filas (WHERE)', items: [
-      { d: 'Comparaciones: =, <> (distinto), <, >, <=, >=.', s: "SELECT nombre, apellidos\nFROM alumnos\nWHERE localidad = 'Sevilla';" },
-      { d: 'Varias condiciones con AND y OR (usa paréntesis para agrupar).', s: "SELECT *\nFROM asignaturas\nWHERE tipo = 'Troncal' AND horas_semana >= 4;" },
-      { d: 'Un rango con BETWEEN (incluye los extremos).', s: 'SELECT nia, cod_asig, nota\nFROM matriculas\nWHERE nota BETWEEN 5 AND 7;' },
-      { d: 'Una lista de valores con IN.', s: "SELECT nombre, localidad\nFROM alumnos\nWHERE localidad IN ('Málaga', 'Cádiz', 'Huelva');" },
-      { d: 'Patrones con LIKE: % son varios caracteres y _ uno solo.', s: "SELECT nombre, apellidos\nFROM alumnos\nWHERE apellidos LIKE '%ez%';" },
-      { d: 'Valores vacíos: se comparan con IS NULL, nunca con = NULL.', s: 'SELECT nombre, apellidos\nFROM alumnos\nWHERE email IS NULL;' }
-    ] },
-    { id: 'order', title: 'Ordenar y limitar', items: [
-      { d: 'Ordenar de mayor a menor con DESC (ASC es el orden por defecto).', s: 'SELECT nombre, salario\nFROM profesores\nORDER BY salario DESC;' },
-      { d: 'Ordenar por varias columnas.', s: 'SELECT apellidos, nombre, id_curso\nFROM alumnos\nORDER BY id_curso, apellidos;' },
-      { d: 'Quedarse con las primeras filas con LIMIT.', s: 'SELECT nia, cod_asig, nota\nFROM matriculas\nORDER BY nota DESC\nLIMIT 5;' }
-    ] },
-    { id: 'agg', title: 'Funciones de agregado', items: [
-      { d: 'Contar filas con COUNT.', s: 'SELECT COUNT(*) AS total_alumnos\nFROM alumnos;' },
-      { d: 'Media, máximo y mínimo. ROUND redondea los decimales.', s: 'SELECT ROUND(AVG(nota), 2) AS media,\n       MAX(nota) AS maxima,\n       MIN(nota) AS minima\nFROM matriculas;' },
-      { d: 'COUNT(columna) no cuenta los NULL; COUNT(*) sí.', s: 'SELECT COUNT(*) AS filas, COUNT(email) AS con_email\nFROM alumnos;' },
-      { d: 'Sumar valores con SUM.', s: 'SELECT SUM(horas_semana) AS horas_totales\nFROM asignaturas;' }
-    ] },
-    { id: 'group', title: 'Agrupar (GROUP BY y HAVING)', items: [
-      { d: 'Un resultado por cada grupo: número de alumnos por localidad.', s: 'SELECT localidad, COUNT(*) AS alumnos\nFROM alumnos\nGROUP BY localidad\nORDER BY alumnos DESC;' },
-      { d: 'Nota media de cada asignatura.', s: 'SELECT cod_asig, ROUND(AVG(nota), 2) AS media\nFROM matriculas\nGROUP BY cod_asig;' },
-      { d: 'HAVING filtra grupos (WHERE filtra filas antes de agrupar).', s: 'SELECT cod_asig, COUNT(*) AS matriculados\nFROM matriculas\nGROUP BY cod_asig\nHAVING COUNT(*) > 10;' }
-    ] },
-    { id: 'join', title: 'Combinar tablas (JOIN)', items: [
-      { d: 'INNER JOIN: une las filas que coinciden en ambas tablas.', s: 'SELECT a.nombre, a.apellidos, c.nombre AS curso\nFROM alumnos a\nINNER JOIN cursos c ON a.id_curso = c.id_curso;' },
-      { d: 'Tres tablas: notas con el nombre del alumno y de la asignatura.', s: 'SELECT al.nombre, al.apellidos, asg.nombre AS asignatura, m.nota\nFROM matriculas m\nJOIN alumnos al ON m.nia = al.nia\nJOIN asignaturas asg ON m.cod_asig = asg.cod_asig\nORDER BY al.apellidos;' },
-      { d: 'LEFT JOIN: todas las filas de la izquierda, aunque no tengan pareja. Aquí, profesorado sin asignatura.', s: 'SELECT p.nombre, p.apellidos, a.nombre AS asignatura\nFROM profesores p\nLEFT JOIN asignaturas a ON a.dni_profesor = p.dni\nWHERE a.cod_asig IS NULL;' },
-      { d: 'La forma clásica, uniendo en el WHERE, da el mismo resultado que INNER JOIN.', s: 'SELECT asignaturas.nombre, profesores.nombre, profesores.apellidos\nFROM asignaturas, profesores\nWHERE asignaturas.dni_profesor = profesores.dni;' }
-    ] },
-    { id: 'sub', title: 'Subconsultas', items: [
-      { d: 'Comparar con un valor calculado: notas por encima de la media.', s: 'SELECT nia, cod_asig, nota\nFROM matriculas\nWHERE nota > (SELECT AVG(nota) FROM matriculas)\nORDER BY nota DESC;' },
-      { d: 'IN con subconsulta: alumnado matriculado en Programación.', s: "SELECT nombre, apellidos\nFROM alumnos\nWHERE nia IN (SELECT nia FROM matriculas WHERE cod_asig = 'PRO1');" },
-      { d: 'NOT EXISTS: asignaturas sin nadie matriculado.', s: 'SELECT cod_asig, nombre\nFROM asignaturas s\nWHERE NOT EXISTS (SELECT 1 FROM matriculas m WHERE m.cod_asig = s.cod_asig);' }
-    ] },
-    { id: 'func', title: 'Texto y fechas', items: [
-      { d: 'Mayúsculas, longitud y unir textos con ||.', s: "SELECT UPPER(apellidos) || ', ' || nombre AS alumno,\n       LENGTH(nombre) AS letras\nFROM alumnos;" },
-      { d: 'Extraer partes de una fecha con strftime.', s: "SELECT nombre, strftime('%Y', fecha_nacimiento) AS anio_nacimiento\nFROM alumnos;" },
-      { d: 'Calcular la edad (un atributo derivado) a partir de la fecha de nacimiento.', s: "SELECT nombre, fecha_nacimiento,\n       CAST((julianday('now') - julianday(fecha_nacimiento)) / 365.25 AS INTEGER) AS edad\nFROM alumnos;" },
-      { d: 'Sustituir los NULL por otro valor con IFNULL.', s: "SELECT nombre, IFNULL(email, 'sin correo') AS email\nFROM alumnos;" }
-    ] },
-    { id: 'dml', title: 'Insertar, modificar y borrar', note: 'Estos ejemplos cambian los datos. Puedes volver a cargar el ejemplo Instituto cuando quieras.', items: [
-      { d: 'INSERT: añadir una fila indicando las columnas.', s: "INSERT INTO alumnos (nia, nombre, apellidos, fecha_nacimiento, localidad, email, id_curso)\nVALUES (1021, 'Rocío', 'Pineda Arroyo', '2009-05-14', 'Jaén', 'rocio.pineda@alumnos.es', 1);" },
-      { d: 'UPDATE: cambiar valores. Sin WHERE se cambiarían todas las filas.', s: "UPDATE alumnos\nSET localidad = 'Córdoba'\nWHERE nia = 1021;" },
-      { d: 'DELETE: borrar filas. Sin WHERE se borraría toda la tabla.', s: 'DELETE FROM alumnos\nWHERE nia = 1021;' },
-      { d: 'La clave ajena impide usar un curso que no existe.', s: "INSERT INTO alumnos (nia, nombre, apellidos, id_curso)\nVALUES (1022, 'Prueba', 'Error', 99);" }
-    ] },
-    { id: 'ddl', title: 'Crear y modificar tablas', items: [
-      { d: 'CREATE TABLE con clave primaria, clave ajena y restricciones.', s: "CREATE TABLE tutorias (\n  id_tutoria INTEGER PRIMARY KEY,\n  nia INTEGER NOT NULL,\n  dni_profesor VARCHAR(9) NOT NULL,\n  fecha DATE DEFAULT CURRENT_DATE,\n  motivo VARCHAR(200),\n  FOREIGN KEY (nia) REFERENCES alumnos (nia),\n  FOREIGN KEY (dni_profesor) REFERENCES profesores (dni)\n);" },
-      { d: 'Añadir una columna a una tabla existente.', s: 'ALTER TABLE alumnos ADD COLUMN telefono VARCHAR(15);' },
-      { d: 'Una vista guarda una consulta con nombre para reutilizarla.', s: 'CREATE VIEW notas_completas AS\nSELECT al.nombre, al.apellidos, asg.nombre AS asignatura, m.nota\nFROM matriculas m\nJOIN alumnos al ON m.nia = al.nia\nJOIN asignaturas asg ON m.cod_asig = asg.cod_asig;\n\nSELECT * FROM notas_completas WHERE nota >= 9;' },
-      { d: 'Borrar una tabla completa (estructura y datos).', s: 'DROP TABLE IF EXISTS tutorias;' }
-    ] }
+  /* Resumen de las instrucciones básicas de SQL. Solo la forma general de cada instrucción,
+     sin consultas resueltas sobre ninguna base de datos, para que no coincida con los ejercicios. */
+  const T = (rows, head) => `<div class="doc-table-wrap"><table class="ref"><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr>` +
+    rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('') + '</table></div>';
+  const S = (code) => `<pre class="sum-syntax">${CodeEditor.highlight(code)}</pre>`;
+
+  const RESUMEN = [
+    { id: 'select', title: 'Consultar datos: SELECT', html: () =>
+      '<p>Muestra columnas de una tabla. Es la instrucción que más vas a usar.</p>' +
+      S('SELECT columna1, columna2\nFROM tabla;') +
+      T([
+        ['<code>SELECT *</code>', 'Todas las columnas de la tabla.'],
+        ['<code>columna AS alias</code>', 'Cambia el título de la columna en el resultado.'],
+        ['<code>SELECT DISTINCT columna</code>', 'Quita los valores repetidos.'],
+        ['<code>+  -  *  /</code>', 'Operaciones con columnas numéricas, por ejemplo <code>precio * 2</code>.']
+      ], ['Se escribe', 'Para qué sirve']) },
+
+    { id: 'where', title: 'Filtrar filas: WHERE', html: () =>
+      '<p>Se queda solo con las filas que cumplen una condición. Los textos y las fechas van entre comillas simples (<code>\'Sevilla\'</code>, <code>\'2025-09-15\'</code>); los números, sin comillas.</p>' +
+      S('SELECT columna1, columna2\nFROM tabla\nWHERE condición;') +
+      T([
+        ['<code>=  &lt;&gt;  &lt;  &gt;  &lt;=  &gt;=</code>', 'Igual, distinto, menor, mayor, menor o igual, mayor o igual.'],
+        ['<code>AND</code>, <code>OR</code>, <code>NOT</code>', 'Unir condiciones: se cumplen las dos, se cumple alguna, no se cumple. Usa paréntesis para agrupar.'],
+        ['<code>columna BETWEEN a AND b</code>', 'Entre dos valores, incluidos los extremos.'],
+        ['<code>columna IN (v1, v2, v3)</code>', 'Igual a alguno de los valores de la lista.'],
+        ['<code>columna LIKE \'patrón\'</code>', 'Texto que sigue un patrón: <code>%</code> son varios caracteres cualesquiera y <code>_</code>, uno solo. <code>\'A%\'</code> empieza por A.'],
+        ['<code>columna IS NULL</code>', 'La casilla está vacía. Nunca se escribe <code>= NULL</code>. Lo contrario es <code>IS NOT NULL</code>.']
+      ], ['Se escribe', 'Significa']) },
+
+    { id: 'order', title: 'Ordenar y limitar: ORDER BY y LIMIT', html: () =>
+      S('SELECT columna1, columna2\nFROM tabla\nORDER BY columna1 DESC, columna2\nLIMIT n;') +
+      T([
+        ['<code>ORDER BY columna</code>', 'Ordena de menor a mayor (o de la A a la Z). Es lo mismo que <code>ASC</code>.'],
+        ['<code>ORDER BY columna DESC</code>', 'Ordena de mayor a menor.'],
+        ['<code>ORDER BY c1, c2</code>', 'Ordena por c1 y, si empatan, por c2.'],
+        ['<code>LIMIT n</code>', 'Muestra solo las n primeras filas. Va siempre al final.']
+      ], ['Se escribe', 'Para qué sirve']) },
+
+    { id: 'agg', title: 'Funciones de agregado', html: () =>
+      '<p>Resumen muchas filas en un solo valor.</p>' +
+      S('SELECT COUNT(*), AVG(columna), MAX(columna)\nFROM tabla\nWHERE condición;') +
+      T([
+        ['<code>COUNT(*)</code>', 'Número de filas.'],
+        ['<code>COUNT(columna)</code>', 'Número de filas en las que esa columna no está vacía (no cuenta los NULL).'],
+        ['<code>SUM(columna)</code>', 'Suma.'],
+        ['<code>AVG(columna)</code>', 'Media.'],
+        ['<code>MAX(columna)</code>, <code>MIN(columna)</code>', 'Valor más alto y más bajo.'],
+        ['<code>ROUND(valor, n)</code>', 'Redondea a n decimales.']
+      ], ['Función', 'Calcula']) },
+
+    { id: 'group', title: 'Agrupar: GROUP BY y HAVING', html: () =>
+      '<p>Calcula un agregado para cada grupo de filas que tienen el mismo valor en una columna.</p>' +
+      S('SELECT columna, COUNT(*)\nFROM tabla\nGROUP BY columna\nHAVING condición_sobre_el_grupo;') +
+      T([
+        ['<code>GROUP BY columna</code>', 'Forma un grupo por cada valor distinto de la columna.'],
+        ['<code>HAVING condición</code>', 'Filtra grupos, por ejemplo <code>HAVING COUNT(*) &gt; 3</code>.'],
+        ['<code>WHERE</code> frente a <code>HAVING</code>', '<code>WHERE</code> filtra filas antes de agrupar; <code>HAVING</code> filtra los grupos ya formados.']
+      ], ['Se escribe', 'Para qué sirve']) },
+
+    { id: 'sub', title: 'Subconsultas', html: () =>
+      '<p>Una consulta dentro de otra, entre paréntesis. La de dentro se calcula primero y su resultado se usa en la condición de la de fuera.</p>' +
+      S('-- La subconsulta devuelve un solo valor\nSELECT columna\nFROM tabla\nWHERE columna > (SELECT AVG(columna) FROM tabla);\n\n-- La subconsulta devuelve una lista de valores\nSELECT columna\nFROM tabla1\nWHERE columna IN (SELECT columna FROM tabla2 WHERE condición);') +
+      T([
+        ['<code>= (SELECT …)</code>, <code>&gt; (SELECT …)</code>…', 'Cuando la subconsulta devuelve un solo valor, por ejemplo una media o un máximo.'],
+        ['<code>IN (SELECT …)</code>', 'Cuando devuelve una lista: el valor está en esa lista.'],
+        ['<code>NOT IN (SELECT …)</code>', 'El valor no está en la lista.']
+      ], ['Se escribe', 'Cuándo se usa']) },
+
+    { id: 'func', title: 'Funciones de texto y fecha', html: () =>
+      T([
+        ['<code>UPPER(texto)</code>, <code>LOWER(texto)</code>', 'Pasa a mayúsculas o minúsculas.'],
+        ['<code>LENGTH(texto)</code>', 'Número de caracteres.'],
+        ['<code>texto1 || texto2</code>', 'Une dos textos.'],
+        ['<code>SUBSTR(texto, inicio, n)</code>', 'Trozo de n caracteres a partir de la posición inicio.'],
+        ['<code>IFNULL(columna, valor)</code>', 'Pone ese valor cuando la casilla está vacía.'],
+        ['<code>strftime(\'%Y\', fecha)</code>', 'Año de una fecha (<code>%m</code> es el mes y <code>%d</code>, el día).'],
+        ['<code>date(\'now\')</code>', 'Fecha de hoy.']
+      ], ['Función', 'Para qué sirve']) },
+
+    { id: 'dml', title: 'Insertar, modificar y borrar datos', html: () =>
+      S('INSERT INTO tabla (columna1, columna2)\nVALUES (valor1, valor2);\n\nUPDATE tabla\nSET columna = valor\nWHERE condición;\n\nDELETE FROM tabla\nWHERE condición;') +
+      '<p class="cheat-note"><strong>Cuidado:</strong> un <code>UPDATE</code> o un <code>DELETE</code> sin <code>WHERE</code> cambia o borra <em>todas</em> las filas de la tabla.</p>' },
+
+    { id: 'ddl', title: 'Crear, modificar y borrar tablas', html: () =>
+      S('CREATE TABLE tabla (\n  columna1 TIPO PRIMARY KEY,\n  columna2 TIPO NOT NULL,\n  columna3 TIPO,\n  FOREIGN KEY (columna3) REFERENCES otra_tabla (su_clave_primaria)\n);\n\nALTER TABLE tabla ADD COLUMN columna TIPO;\n\nDROP TABLE tabla;') +
+      '<p>Si la clave primaria tiene varias columnas, se escribe una sola vez al final: <code>PRIMARY KEY (columna1, columna2)</code>. Crea siempre primero las tablas a las que apuntan las claves ajenas.</p>' }
   ];
 
-  function renderCheat(onTry) {
+  function renderCheat() {
     const idx = document.getElementById('cheatIndex');
     const body = document.getElementById('cheatBody');
-    idx.innerHTML = CHEAT.map((s) => `<a href="#ch-${s.id}">${U.esc(s.title)}</a>`).join('') + '<a href="#ch-ref">Referencia rápida</a>';
+    idx.innerHTML = RESUMEN.map((s) => `<a href="#ch-${s.id}">${U.esc(s.title)}</a>`).join('') + '<a href="#ch-ref">Referencia rápida</a>';
     let h = '';
-    CHEAT.forEach((sec) => {
-      h += `<h2 id="ch-${sec.id}">${U.esc(sec.title)}</h2>`;
-      if (sec.note) h += `<p class="cheat-note">${U.esc(sec.note)}</p>`;
-      sec.items.forEach((it, i) => {
-        h += `<div class="cheat-item"><p>${U.esc(it.d)}</p><pre>${CodeEditor.highlight(it.s)}</pre>
-          <button class="btn" data-try="${sec.id}:${i}">Probar</button></div>`;
-      });
-    });
+    RESUMEN.forEach((sec) => { h += `<section class="sum-sec"><h2 id="ch-${sec.id}">${U.esc(sec.title)}</h2>${sec.html()}</section>`; });
     h += `<h2 id="ch-ref">Referencia rápida</h2>
       <h3>Orden en que se escribe una consulta</h3>
       <div class="doc-table-wrap"><table class="ref"><tr><th>Cláusula</th><th>Para qué sirve</th><th>¿Obligatoria?</th></tr>
         <tr><td><code>SELECT</code></td><td>Columnas que se muestran</td><td>Sí</td></tr>
-        <tr><td><code>FROM</code> / <code>JOIN</code></td><td>Tablas de las que salen los datos</td><td>Casi siempre</td></tr>
+        <tr><td><code>FROM</code></td><td>Tabla de la que salen los datos</td><td>Casi siempre</td></tr>
         <tr><td><code>WHERE</code></td><td>Filtra filas</td><td>No</td></tr>
         <tr><td><code>GROUP BY</code></td><td>Forma grupos para los agregados</td><td>No</td></tr>
         <tr><td><code>HAVING</code></td><td>Filtra grupos</td><td>No</td></tr>
@@ -110,13 +129,6 @@
       <h3>Diferencias con MySQL</h3>
       <p>SGBD usa SQLite, que sigue el estándar SQL casi igual que MySQL. Las diferencias que más se notan: la fecha actual es <code>CURRENT_DATE</code> o <code>date('now')</code> en vez de <code>NOW()</code>; para unir textos se usa <code>||</code> en vez de <code>CONCAT()</code>; y los números autoincrementales se consiguen con <code>INTEGER PRIMARY KEY</code> sin escribir <code>AUTO_INCREMENT</code>.</p>`;
     body.innerHTML = h;
-    body.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-try]');
-      if (!b) return;
-      const [sid, i] = b.dataset.try.split(':');
-      const sec = CHEAT.find((s) => s.id === sid);
-      onTry(sec.items[+i].s);
-    });
     idx.addEventListener('click', (e) => {
       const a = e.target.closest('a');
       if (!a) return;
@@ -173,7 +185,7 @@
         <tr><td>Atributo compuesto</td><td>Se guardan solo sus partes.</td></tr>
         <tr><td>Atributo derivado</td><td>No se guarda; se calcula en las consultas.</td></tr>
       </table></div>
-      <p>Cuando tengas las tablas, créalas en una base de datos vacía (<strong>Abrir base de datos</strong>, <em>Nueva base de datos vacía</em>) y comprueba que funcionan insertando datos y haciendo consultas. Tienes ejemplos de <code>CREATE TABLE</code> en la <strong>Chuleta SQL</strong>.</p>
+      <p>Cuando tengas las tablas, créalas en una base de datos vacía (<strong>Abrir base de datos</strong>, <em>Nueva base de datos vacía</em>) y comprueba que funcionan insertando datos y haciendo consultas. Tienes la forma general de <code>CREATE TABLE</code> en el <strong>Resumen SQL</strong>.</p>
 
       <h2>3. La base de datos SQL</h2>
       <p>El motor es SQLite, el mismo que usan muchas aplicaciones del móvil. Puedes:</p>
